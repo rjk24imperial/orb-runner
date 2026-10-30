@@ -8,6 +8,12 @@ A small browser game: collect gold orbs and dodge the red blocks. The blocks get
 - Space: start / restart
 - P: pause
 
+On a phone or tablet:
+
+- Drag anywhere on the game to move (like a trackpad)
+- Tap to start, restart or resume
+- Pause button below the game (the game also pauses when you switch apps)
+
 ## Run locally
 
 Open `index.html` in a browser, or serve the folder:

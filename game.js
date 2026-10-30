@@ -19,9 +19,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === " " && (state.mode === "title" || state.mode === "over")) {
     startGame();
   }
-  if (e.key.toLowerCase() === "p" && (state.mode === "playing" || state.mode === "paused")) {
-    state.mode = state.mode === "playing" ? "paused" : "playing";
-  }
+  if (e.key.toLowerCase() === "p") togglePause();
 });
 
 window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
@@ -29,6 +27,46 @@ window.addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
 function isDown(...names) {
   return names.some((n) => keys.has(n));
 }
+
+// Touch / drag: dragging anywhere on the canvas moves the player by the same amount,
+// like a trackpad, so your finger never covers the player.
+let drag = null;
+const touchMove = { x: 0, y: 0 };
+
+canvas.addEventListener("pointerdown", (e) => {
+  if (state.mode === "title" || state.mode === "over") startGame();
+  else if (state.mode === "paused") state.mode = "playing";
+  drag = { x: e.clientX, y: e.clientY };
+  canvas.setPointerCapture(e.pointerId);
+});
+
+canvas.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  // Convert screen pixels to canvas pixels (the canvas is scaled to fit the screen)
+  const scale = W / canvas.getBoundingClientRect().width;
+  touchMove.x += (e.clientX - drag.x) * scale;
+  touchMove.y += (e.clientY - drag.y) * scale;
+  drag = { x: e.clientX, y: e.clientY };
+});
+
+function endDrag() {
+  drag = null;
+}
+canvas.addEventListener("pointerup", endDrag);
+canvas.addEventListener("pointercancel", endDrag);
+
+function togglePause() {
+  if (state.mode === "playing" || state.mode === "paused") {
+    state.mode = state.mode === "playing" ? "paused" : "playing";
+  }
+}
+
+document.getElementById("pause-btn").addEventListener("click", togglePause);
+
+// Pause automatically when the tab is hidden (switching apps on a phone)
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && state.mode === "playing") state.mode = "paused";
+});
 
 // ---------- High score (saved in the browser) ----------
 function loadBest() {
@@ -65,7 +103,9 @@ function startGame() {
   state.time = 0;
   state.hazards = [];
   state.spawnTimer = 0;
-  state.player = { x: W / 2, y: H / 2, r: 14, speed: 260 };
+  touchMove.x = 0;
+  touchMove.y = 0;
+  state.player ={ x: W / 2, y: H / 2, r: 14, speed: 260 };
   state.orb = randomOrb();
 }
 
@@ -113,8 +153,25 @@ function update(dt) {
     dy *= Math.SQRT1_2;
   }
 
-  p.x = clamp(p.x + dx * p.speed * dt, p.r, W - p.r);
-  p.y = clamp(p.y + dy * p.speed * dt, p.r, H - p.r);
+  p.x += dx * p.speed * dt;
+  p.y += dy * p.speed * dt;
+
+  // Apply touch drag, capped so dragging fast isn't much faster than key speed.
+  // Leftover movement carries over to the next frame, but only up to a small
+  // amount so the player never lags far behind your finger.
+  const tLen = Math.hypot(touchMove.x, touchMove.y);
+  if (tLen > 0) {
+    const step = Math.min(tLen, p.speed * 1.5 * dt);
+    p.x += (touchMove.x / tLen) * step;
+    p.y += (touchMove.y / tLen) * step;
+    const left = tLen - step;
+    const keep = Math.min(left, 40) / tLen;
+    touchMove.x *= keep;
+    touchMove.y *= keep;
+  }
+
+  p.x = clamp(p.x, p.r, W - p.r);
+  p.y = clamp(p.y, p.r, H - p.r);
 
   // Collect orb
   if (distance(p, state.orb) < p.r + state.orb.r) {
@@ -188,11 +245,11 @@ function draw() {
 
   // Overlays
   if (state.mode === "title") {
-    overlay("Orb Runner", "Press SPACE to start");
+    overlay("Orb Runner", "Press SPACE or tap to start");
   } else if (state.mode === "paused") {
-    overlay("Paused", "Press P to resume");
+    overlay("Paused", "Press P or tap to resume");
   } else if (state.mode === "over") {
-    overlay("Game Over", `Score: ${state.score}   Press SPACE to play again`);
+    overlay("Game Over", `Score: ${state.score}   SPACE or tap to play again`);
   }
 }
 

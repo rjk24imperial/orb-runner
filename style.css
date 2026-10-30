@@ -26,8 +26,13 @@ h1 {
 
 canvas {
   display: block;
-  max-width: 100%;
+  margin: 0 auto;
+  /* Fit the screen width and height while keeping the 4:3 shape */
+  width: min(640px, 100%, calc((100dvh - 170px) * 4 / 3));
   height: auto;
+  touch-action: none; /* stop dragging from scrolling or zooming the page */
+  user-select: none;
+  -webkit-user-select: none;
   background: #1c1f2b;
   border: 2px solid #343a50;
   border-radius: 8px;
@@ -36,4 +41,38 @@ canvas {
 .help {
   color: #9aa0b8;
   font-size: 14px;
+}
+
+#pause-btn {
+  display: none;
+  margin: 12px auto 0;
+  padding: 10px 28px;
+  font: inherit;
+  font-size: 16px;
+  color: #e8e8f0;
+  background: #2a2f42;
+  border: 1px solid #343a50;
+  border-radius: 8px;
+}
+
+.help-touch {
+  display: none;
+}
+
+/* Touch screens: show the pause button and touch instructions */
+@media (pointer: coarse) {
+  #pause-btn,
+  .help-touch {
+    display: block;
+  }
+  .help-keys {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
 }
