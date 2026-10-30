@@ -34,8 +34,8 @@ let drag = null;
 const touchMove = { x: 0, y: 0 };
 
 canvas.addEventListener("pointerdown", (e) => {
-  if (state.mode === "title" || state.mode === "over") startGame();
-  else if (state.mode === "paused") state.mode = "playing";
+  e.preventDefault(); // stops Safari selecting text or showing the long-press menu
+  if (state.mode !== "playing") return;
   drag = { x: e.clientX, y: e.clientY };
   canvas.setPointerCapture(e.pointerId);
 });
@@ -61,7 +61,27 @@ function togglePause() {
   }
 }
 
-document.getElementById("pause-btn").addEventListener("click", togglePause);
+const startBtn = document.getElementById("start-btn");
+const pauseBtn = document.getElementById("pause-btn");
+
+startBtn.addEventListener("click", () => {
+  startBtn.blur(); // so pressing Space later doesn't "click" it again
+  startGame();
+});
+
+pauseBtn.addEventListener("click", () => {
+  pauseBtn.blur();
+  togglePause();
+});
+
+// Show the right buttons for the current screen (called every frame, cheap)
+function updateButtons() {
+  const showStart = state.mode === "title" || state.mode === "over";
+  startBtn.hidden = !showStart;
+  startBtn.textContent = state.mode === "over" ? "Play again" : "Start";
+  pauseBtn.textContent = state.mode === "paused" ? "Resume" : "Pause";
+  pauseBtn.disabled = showStart;
+}
 
 // Pause automatically when the tab is hidden (switching apps on a phone)
 document.addEventListener("visibilitychange", () => {
@@ -245,11 +265,11 @@ function draw() {
 
   // Overlays
   if (state.mode === "title") {
-    overlay("Orb Runner", "Press SPACE or tap to start");
+    overlay("Orb Runner", "Collect gold orbs, dodge red blocks");
   } else if (state.mode === "paused") {
-    overlay("Paused", "Press P or tap to resume");
+    overlay("Paused", "");
   } else if (state.mode === "over") {
-    overlay("Game Over", `Score: ${state.score}   SPACE or tap to play again`);
+    overlay("Game Over", `Score: ${state.score}`);
   }
 }
 
@@ -258,10 +278,10 @@ function overlay(title, subtitle) {
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#e8e8f0";
   ctx.textAlign = "center";
-  ctx.font = "bold 40px system-ui, sans-serif";
-  ctx.fillText(title, W / 2, H / 2 - 10);
-  ctx.font = "18px system-ui, sans-serif";
-  ctx.fillText(subtitle, W / 2, H / 2 + 28);
+  ctx.font = "bold 48px system-ui, -apple-system, sans-serif";
+  ctx.fillText(title, W / 2, H / 2 - 50);
+  ctx.font = "22px system-ui, -apple-system, sans-serif";
+  ctx.fillText(subtitle, W / 2, H / 2 - 10);
 }
 
 // ---------- Helpers ----------
@@ -290,6 +310,7 @@ function loop(now) {
 
   update(dt);
   draw();
+  updateButtons();
   requestAnimationFrame(loop);
 }
 

@@ -4,15 +4,15 @@ A small browser game: collect gold orbs and dodge the red blocks. The blocks get
 
 ## Controls
 
+- Start / Play again button (or Space): start a game
 - Arrow keys or WASD: move
-- Space: start / restart
 - P: pause
 
 On a phone or tablet:
 
+- Tap Start / Play again to begin
 - Drag anywhere on the game to move (like a trackpad)
-- Tap to start, restart or resume
-- Pause button below the game (the game also pauses when you switch apps)
+- Pause / Resume button below the game (the game also pauses when you switch apps)
 
 ## Run locally
 
